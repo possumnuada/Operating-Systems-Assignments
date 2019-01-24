@@ -435,15 +435,17 @@ struct node* rotate_left(struct node* ref, int n) {
  */
 struct node* shift_left(struct node* ref, int n) {
   if(!ref) return NULL;
+  int size_list = size(ref);
 
-  if(size(ref)<=n){
+  if(size_list<=n){
     clear(ref);
     return NULL;
   }
 
-  for(n ; n > 0 ; n--){
+  for( ; n > 0 ; n--){
       ref = pop_front(ref);
   }
+  if(!ref) return NULL;
   return ref;
 }
 
@@ -545,7 +547,7 @@ int main() {
     print(list);
 
     printf("Shift left 4 times: ");
-    shift_left(ffind(begin(list), 11), 4);
+    shift_left(ffind(begin(list), 11), 5);
     print(list);
 
 
