@@ -95,15 +95,19 @@ char ** kapish_split_line(char *line){
   return tokens;
 }
 
+/*
 int kapish_launch(char **args){
   pid_t pid;
 //  pid_t wpid;
   int status;
+  const char *file = args[0];
+  char *const argv[] = args;
+
 
   pid = fork();
   if (pid == 0) {
     // Child process
-    if (execvp(args[0], args) == -1) {
+    if (execvp(file, argv) == -1) {
       perror("kapish");
     }
     // Never going to get here if new process is loaded correctly
@@ -120,7 +124,7 @@ int kapish_launch(char **args){
 
   return 1;
 }
-
+*/
 
 
 /*
@@ -174,6 +178,7 @@ int kapish_exit(char **args){
   return 0;
 }
 
+
 int kapish_execute(char **args){
   int i;
 
@@ -187,8 +192,8 @@ int kapish_execute(char **args){
       return (*builtin_func[i])(args);
     }
   }
-
-  return kapish_launch(args);
+return 1;
+//  return kapish_launch(args);
 }
 
 int main(int argc, char **argv){
