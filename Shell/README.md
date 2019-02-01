@@ -15,6 +15,9 @@ I used code from the following sources:
 2. Run the command "./kapish"
 
 ## Kapish Built-In Commands
+### help
+This command provides instructions and lists the built-in commands.
+
 ### setenv var [value]
 This command sets the given variable var with the given value. If the variable does not exist, it will be created.
 
@@ -22,4 +25,10 @@ This command sets the given variable var with the given value. If the variable d
 This command destroys the environment variable var.
 
 ### cd [dir]
-This command changes kapish's working directory to dir. 
+This command changes kapish's working directory to dir.
+
+### exit
+This command causes kapish to exit.
+
+### printenv
+This command print all of the environment variables.
