@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include<stdio.h> // printf()
 #include<stdlib.h> // malloc()
 #include <sys/wait.h>
@@ -15,8 +16,12 @@ int kapish_num_builtins();
 int kapish_cd(char **args);
 int kapish_help(char **args);
 int kapish_exit(char **args);
+int kapish_setenv(char **args);
+int kapish_unsetenv(char **args);
 int kapish_execute(char **args);
+int kapish_printenv();
 
+extern char **environ;
 
 void kapish_loop(void){
   char *line;
@@ -24,7 +29,7 @@ void kapish_loop(void){
   int status;
 
   do {
-    printf("?_");
+    printf("? ");
     line = kapish_read_line();      // Read line
     args = kapish_split_line(line); // Split the line into args and execute args
     status = kapish_execute(args);  // Determine when to execute
@@ -95,26 +100,21 @@ char ** kapish_split_line(char *line){
   return tokens;
 }
 
-/*
+
 int kapish_launch(char **args){
   pid_t pid;
-//  pid_t wpid;
   int status;
-  const char *file = args[0];
-  char *const argv[] = args;
-
 
   pid = fork();
   if (pid == 0) {
     // Child process
-    if (execvp(file, argv) == -1) {
-      perror("kapish");
+    if (execvp(args[0], args) == -1) {
+      perror("kapish1");
     }
-    // Never going to get here if new process is loaded correctly
     exit(EXIT_FAILURE);
   } else if (pid < 0) {
     // Error forking
-    perror("kapish");
+    perror("kapish2");
   } else {
     // Parent process
     do {
@@ -124,7 +124,8 @@ int kapish_launch(char **args){
 
   return 1;
 }
-*/
+
+
 
 
 /*
@@ -133,13 +134,19 @@ int kapish_launch(char **args){
 char *builtin_str[] = {
   "cd",
   "help",
-  "exit"
+  "exit",
+  "setenv",
+  "unsetenv",
+  "printenv"
 };
 
 int (*builtin_func[]) (char **) = {
   &kapish_cd,
   &kapish_help,
-  &kapish_exit
+  &kapish_exit,
+  &kapish_setenv,
+  &kapish_unsetenv,
+  &kapish_printenv
 };
 
 int kapish_num_builtins() {
@@ -154,11 +161,12 @@ int kapish_cd(char **args){
     fprintf(stderr, "kapish: expected argument to \"cd\"\n");
   } else {
     if (chdir(args[1]) != 0) {
-      perror("kapish");
+      perror("kapish3");
     }
   }
   return 1;
 }
+
 
 int kapish_help(char **args){
   int i;
@@ -178,6 +186,31 @@ int kapish_exit(char **args){
   return 0;
 }
 
+int kapish_setenv(char **args){
+  if(args[1] == NULL){
+    fprintf(stderr, "kapish: expected argument to setenv\n");
+  }else if(args[2] == NULL){
+    fprintf(stderr, "kapish: expected value for %s\n", args[1]);
+  }else{
+    int set = setenv(args[1], args[2], 1);
+    if(set == -1){
+      fprintf(stderr, "kapish: failed to set %s to %s\n", args[1], args[2]);
+    }
+  }
+  return 1;
+}
+
+int kapish_unsetenv(char **args){
+  if(args[1] == NULL){
+    fprintf(stderr, "kapish: expected argument to unsetenv\n");
+  }else{
+    int unset = unsetenv(args[1]);
+    if(unset == -1){
+      fprintf(stderr, "kapish: failed to unset %s\n", args[1]);
+    }
+  }
+  return 1;
+}
 
 int kapish_execute(char **args){
   int i;
@@ -192,27 +225,40 @@ int kapish_execute(char **args){
       return (*builtin_func[i])(args);
     }
   }
-return 1;
-//  return kapish_launch(args);
+
+ return kapish_launch(args);
+}
+
+int kapish_printenv() {
+  int i = 1;
+  char *s = *environ;
+
+  for (; s; i++) {
+      printf("%s\n", s);
+      s = *(environ+i);
+  }
+
+  return 1;
 }
 
 int main(int argc, char **argv){
   // Load config files, if there are any
-  static const char filename[] = "file.txt";
-   FILE *file = fopen ( filename, "r" );
-   if ( file != NULL )
-   {
-      char line [ 128 ]; /* or other suitable maximum line size */
-      while ( fgets ( line, sizeof line, file ) != NULL ) /* read a line */
-      {
-         fputs ( line, stdout ); /* write the line */
-      }
-      fclose ( file );
-   }
-   else
-   {
-      perror ( filename ); /* why didn't the file open? */
-   }
+  char **args;
+  static const char filename[] = ".kapishrc";
+  FILE *file = fopen ( filename, "r" );
+  if ( file != NULL ){
+    char line [512];
+    while ( fgets ( line, sizeof line, file ) != NULL ){ // Read file line by line
+       printf("? ");
+       fputs ( line, stdout );         // write the line
+       args = kapish_split_line(line); // Split the line into args and execute args
+       kapish_execute(args);  // Determine when to execute
+    }
+    fclose ( file );
+  }
+  else{
+    perror ( filename ); // Error opening file
+  }
 
   // Run command loop
   kapish_loop();
