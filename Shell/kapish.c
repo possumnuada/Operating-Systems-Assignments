@@ -1,6 +1,6 @@
 #define _GNU_SOURCE
-#include<stdio.h> // printf()
-#include<stdlib.h> // malloc()
+#include <stdio.h> // printf
+#include <stdlib.h> // malloc()
 #include <sys/wait.h>
 #include <unistd.h>
 #include <string.h>
@@ -21,8 +21,11 @@ int kapish_unsetenv(char **args);
 int kapish_execute(char **args);
 int kapish_printenv();
 
-extern char **environ;
+extern char **environ;   // environment variables
 
+/*
+  Read lines from input and execute
+*/
 void kapish_loop(void){
   char *line;
   char **args;
@@ -34,11 +37,14 @@ void kapish_loop(void){
     args = kapish_split_line(line); // Split the line into args and execute args
     status = kapish_execute(args);  // Determine when to execute
 
-    free(line);
+    free(line);                     // Free line and args
     free(args);
   } while (status);
 }
 
+/*
+  Read line from input and return it
+*/
 char *kapish_read_line(void){
   int buffer_size = 512;
   int position = 0;
@@ -72,6 +78,9 @@ char *kapish_read_line(void){
   }
 }
 
+/*
+  Split given line and return as tokens
+*/
 char ** kapish_split_line(char *line){
   int buffer_size = 64, position = 0;
   char **tokens = malloc(buffer_size * sizeof(char*));
@@ -100,7 +109,9 @@ char ** kapish_split_line(char *line){
   return tokens;
 }
 
-
+/*
+  Forks a child process
+*/
 int kapish_launch(char **args){
   pid_t pid;
   int status;
@@ -109,12 +120,12 @@ int kapish_launch(char **args){
   if (pid == 0) {
     // Child process
     if (execvp(args[0], args) == -1) {
-      perror("kapish1");
+      perror("kapish");
     }
     exit(EXIT_FAILURE);
   } else if (pid < 0) {
     // Error forking
-    perror("kapish2");
+    perror("kapish");
   } else {
     // Parent process
     do {
@@ -126,11 +137,9 @@ int kapish_launch(char **args){
 }
 
 
-
-
 /*
   List of builtin commands, followed by their corresponding functions.
- */
+*/
 char *builtin_str[] = {
   "cd",
   "help",
@@ -149,24 +158,27 @@ int (*builtin_func[]) (char **) = {
   &kapish_printenv
 };
 
+/*
+  Returns the number of built-in functions
+*/
 int kapish_num_builtins() {
   return sizeof(builtin_str) / sizeof(char *);
 }
 
 /*
-  Builtin function implementations.
+  Built-in function implementations
+  See README for details on each function
 */
 int kapish_cd(char **args){
   if (args[1] == NULL) {
-    fprintf(stderr, "kapish: expected argument to \"cd\"\n");
+    chdir(getenv("HOME"));
   } else {
     if (chdir(args[1]) != 0) {
-      perror("kapish3");
+      perror("kapish");
     }
   }
   return 1;
 }
-
 
 int kapish_help(char **args){
   printf("Possum Nuada's kapish\n");
@@ -211,6 +223,21 @@ int kapish_unsetenv(char **args){
   return 1;
 }
 
+int kapish_printenv() {
+  int i = 1;
+  char *s = *environ;
+
+  for (; s; i++) {
+      printf("%s\n", s);
+      s = *(environ+i);
+  }
+
+  return 1;
+}
+
+/*
+  Executes the provided command
+*/
 int kapish_execute(char **args){
   int i;
 
@@ -226,18 +253,6 @@ int kapish_execute(char **args){
   }
 
  return kapish_launch(args);
-}
-
-int kapish_printenv() {
-  int i = 1;
-  char *s = *environ;
-
-  for (; s; i++) {
-      printf("%s\n", s);
-      s = *(environ+i);
-  }
-
-  return 1;
 }
 
 int main(int argc, char **argv){
@@ -261,8 +276,6 @@ int main(int argc, char **argv){
 
   // Run command loop
   kapish_loop();
-
-  // Perform any shutdown/cleanup
 
   return EXIT_SUCCESS;
 }
