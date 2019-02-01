@@ -11,9 +11,14 @@ I used code from the following sources:
 * Printing all environment variables in C / C++ - https://stackoverflow.com/questions/2085302/printing-all-environment-variables-in-c-c
 
 ## Using kapish
-1. Run the command "make"
-2. Run the command "./kapish"
-3. Enter a command 
+1. Run the command "make" while in the same directory as kapish.c and makefile.
+2. If you would like to run a kapish script, add a file named ".kapishrc" to the same directory.
+   Each command should be on its own line.
+3. Run the command "./kapish".
+4. Enter commands.
+ * See built-in command.
+ * Or enter path to an executable to execute it.
+5. Enter "exit" or Control-D to exit.
 
 ## Kapish Built-In Commands
 ### help
@@ -26,10 +31,14 @@ This command sets the given variable var with the given value. If the variable d
 This command destroys the environment variable var.
 
 ### cd [dir]
-This command changes kapish's working directory to dir.
+This command changes kapish's working directory to dir, or to home the directory dir is omitted.
 
 ### exit
 This command causes kapish to exit.
 
 ### printenv
-This command print all of the environment variables.
+This command prints all of the environment variables.
+
+## Known Bugs
+* Control-C is not handled in any special way.
+* Entire path to executable must be entered to start it. 

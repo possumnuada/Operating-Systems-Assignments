@@ -50,6 +50,7 @@ char *kapish_read_line(void){
   int position = 0;
   char *buffer = malloc(sizeof(char) * buffer_size);  // Allocate memory
   int c;
+  int first = 1;
 
   if(!buffer){
     fprintf(stderr, "Error: Failed to allocate memory.\n");
@@ -58,6 +59,9 @@ char *kapish_read_line(void){
 
   while(1){
     c = getchar();              // Read a character
+
+    if(first == 1 && c == EOF) exit(EXIT_SUCCESS);
+    first = 0;
 
     if(c == EOF || c =='\n') {  // If end of file of new line
       buffer[position] = '\0';  // Add null terminator
@@ -82,7 +86,7 @@ char *kapish_read_line(void){
   Split given line and return as tokens
 */
 char ** kapish_split_line(char *line){
-  int buffer_size = 64, position = 0;
+  int buffer_size = 512, position = 0;
   char **tokens = malloc(buffer_size * sizeof(char*));
   char *token;
 
@@ -189,6 +193,7 @@ int kapish_help(char **args){
     printf("  %s\n", builtin_str[i]);
   }
 
+  printf("See the README file for more information about the built-in commands.\n");
   printf("Use the man command for information on other programs.\n");
   return 1;
 }

@@ -1,4 +1,10 @@
 cd ..
 cd ..
 cd Operating-Systems-Assignments/Shell
+
 cd ..
+setenv test1 test1
+setenv test2 test2
+printenv
+unsetenv test1
+printenv
