@@ -15,9 +15,9 @@ I used code from the following sources:
 2. If you would like to run a kapish script, add a file named ".kapishrc" to the same directory.
    Each command should be on its own line.
 3. Run the command "./kapish".
-4. Enter commands.
- * See built-in command.
- * Or enter path to an executable to execute it.
+4. Enter commands
+ * See built-in commands.
+ * Or enter a program name to execute it.
 5. Enter "exit" or Control-D to exit.
 
 ## Kapish Built-In Commands
@@ -41,4 +41,3 @@ This command prints all of the environment variables.
 
 ## Known Bugs
 * Control-C is not handled in any special way.
-* Entire path to executable must be entered to start it. 
