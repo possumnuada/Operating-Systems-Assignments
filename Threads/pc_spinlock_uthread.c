@@ -23,11 +23,10 @@ void* producer (void* v) {
   for (int i=0; i<NUM_ITERATIONS; i++) {
 
     // Read items to check if it's likely the thread will be able to produce
-    while(items>=MAX_ITEMS);
+    while(items>=MAX_ITEMS) producer_wait_count++;
 
     // Obtain lock
     spinlock_lock (&lock);
-    //printf("Thread: %s, Iteration: %d, Number of Items: %d \n", thread, i, items );
 
     // Check items again now that mutex lock has been obtained
     if(items >= MAX_ITEMS){
@@ -41,6 +40,7 @@ void* producer (void* v) {
       histogram[items] ++;
       spinlock_unlock (&lock);
     }
+    //printf("Thread: %s, Iteration: %d, Number of Items: %d \n", thread, i, items );
   }
   return NULL;
 }
@@ -49,9 +49,9 @@ void* consumer (void* v) {
   char* thread;
   thread = (char*) v;
   for (int i=0; i<NUM_ITERATIONS; i++) {
-    while(items==0);
+    while(items==0) consumer_wait_count++;
     spinlock_lock (&lock);
-    //printf("Thread: %s, Iteration: %d, Number of Items: %d \n", thread, i, items );
+
     if(items < 1){
       spinlock_unlock (&lock);
       i--;
@@ -61,6 +61,7 @@ void* consumer (void* v) {
       histogram[items] ++;
       spinlock_unlock (&lock);
     }
+    //printf("Thread: %s, Iteration: %d, Number of Items: %d \n", thread, i, items );
   }
   return NULL;
 }

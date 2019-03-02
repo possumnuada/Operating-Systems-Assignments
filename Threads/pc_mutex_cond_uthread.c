@@ -17,6 +17,8 @@ const int NUM_CONSUMERS  = 2;
 const int NUM_PRODUCERS  = 2;
 
 uthread_mutex_t mutex;
+uthread_cond_t cond_not_full;
+uthread_cond_t cond_not_empty;
 
 int producer_wait_count;     // # of times producer had to wait
 int consumer_wait_count;     // # of times consumer had to wait
@@ -35,25 +37,23 @@ void* producer (void* v) {
   thread = (char*) v;
   for (int i=0; i<NUM_ITERATIONS; i++) {
 
-    // Read items to check if it's likely the thread will be able to produce
-    while(items>=MAX_ITEMS);
-
     // Obtain mutex lock
     uthread_mutex_lock( mutex );
-  //  printf("Thread: %s, Iteration: %d, Number of Items: %d \n", thread, i, items );
 
-    // Check items again now that mutex lock has been obtained
-    if(items >= MAX_ITEMS){
-      // Give up lock and decrement counter if thread can't produce
-      uthread_mutex_unlock( mutex );
-      i--;
+    // While full, wait til not full
+    while(items >= MAX_ITEMS){
       producer_wait_count++;
-    }else{
-      // Produce, add to histogram, then give up lock
-      items++;
-      histogram[items] ++;
-      uthread_mutex_unlock( mutex );
+      uthread_cond_wait( cond_not_full);
     }
+
+    uthread_cond_signal(cond_not_empty);
+
+    items++;
+    histogram[items] ++;
+    uthread_mutex_unlock( mutex );
+
+    //  printf("Thread: %s, Iteration: %d, Number of Items: %d \n", thread, i, items );
+
   }
   return NULL;
 }
@@ -67,18 +67,22 @@ void* consumer (void* v) {
   char* thread;
   thread = (char*) v;
   for (int i=0; i<NUM_ITERATIONS; i++) {
-    while(items==0);
+
     uthread_mutex_lock( mutex );
-  //  printf("Thread: %s, Iteration: %d, Number of Items: %d \n", thread, i, items );
-    if(items < 1){
-      uthread_mutex_unlock( mutex );
-      i--;
+
+    while(items == 0){
       consumer_wait_count++;
-    }else{
-      items--;
-      histogram[items] ++;
-      uthread_mutex_unlock( mutex );
+      uthread_cond_wait(cond_not_empty);
     }
+
+    uthread_cond_signal(cond_not_full);
+
+    items--;
+    histogram[items] ++;
+    uthread_mutex_unlock( mutex );
+
+  //  printf("Thread: %s, Iteration: %d, Number of Items: %d \n", thread, i, items );
+
   }
   return NULL;
 }
@@ -87,9 +91,9 @@ int main() {
   uthread_t t[4];
 
   uthread_init (4);
-   mutex = uthread_mutex_create();
-
-  // TODO: Create Threads and Join
+  mutex = uthread_mutex_create();
+  cond_not_full = uthread_cond_create(mutex);
+  cond_not_empty = uthread_cond_create(mutex);
 
   t[0] = uthread_create(producer, "Producer 1");
   t[1] = uthread_create(producer, "Producer 1");
@@ -100,6 +104,9 @@ int main() {
   uthread_join(t[1], NULL);
   uthread_join(t[2], NULL);
   uthread_join(t[3], NULL);
+
+  uthread_cond_destroy(cond_not_full);
+  uthread_cond_destroy(cond_not_empty);
 
   printf ("producer_wait_count=%d\nconsumer_wait_count=%d\n", producer_wait_count, consumer_wait_count);
   printf ("items value histogram:\n");

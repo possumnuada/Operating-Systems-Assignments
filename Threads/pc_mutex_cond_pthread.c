@@ -15,6 +15,8 @@ const int NUM_CONSUMERS  = 2;
 const int NUM_PRODUCERS  = 2;
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t  cond_not_full  = PTHREAD_COND_INITIALIZER;
+pthread_cond_t  cond_not_empty  = PTHREAD_COND_INITIALIZER;
 
 int producer_wait_count;     // # of times producer had to wait
 int consumer_wait_count;     // # of times consumer had to wait
@@ -32,25 +34,20 @@ void* producer (void* v) {
   thread = (char*) v;
   for (int i=0; i<NUM_ITERATIONS; i++) {
 
-    // Read items to check if it's likely the thread will be able to produce
-    while(items>=MAX_ITEMS);
-
     // Obtain mutex lock
     pthread_mutex_lock( &mutex );
-    //printf("Thread: %s, Iteration: %d, Number of Items: %d \n", thread, i, items );
 
-    // Check items again now that mutex lock has been obtained
-    if(items >= MAX_ITEMS){
-      // Give up lock and decrement counter if thread can't produce
-      pthread_mutex_unlock( &mutex );
-      i--;
+    // While full, wait til not full
+    while(items >= MAX_ITEMS){
       producer_wait_count++;
-    }else{
-      // Produce, add to histogram, then give up lock
-      items++;
-      histogram[items] ++;
-      pthread_mutex_unlock( &mutex );
+      pthread_cond_wait( &cond_not_full, &mutex );
     }
+
+    pthread_cond_signal(&cond_not_empty);
+
+    items++;
+    histogram[items] ++;
+    pthread_mutex_unlock( &mutex );
   }
   return NULL;
 }
@@ -64,24 +61,24 @@ void* consumer (void* v) {
   char* thread;
   thread = (char*) v;
   for (int i=0; i<NUM_ITERATIONS; i++) {
-    while(items==0);
+
     pthread_mutex_lock( &mutex );
-  //  printf("Thread: %s, Iteration: %d, Number of Items: %d \n", thread, i, items );
-    if(items < 1){
-      pthread_mutex_unlock( &mutex );
-      i--;
+
+    while(items == 0){
       consumer_wait_count++;
-    }else{
-      items--;
-      histogram[items] ++;
-      pthread_mutex_unlock( &mutex );
+      pthread_cond_wait(&cond_not_empty, &mutex);
     }
+
+    pthread_cond_signal(&cond_not_full);
+
+    items--;
+    histogram[items] ++;
+    pthread_mutex_unlock( &mutex );
   }
   return NULL;
 }
 
 int main() {
-  //pthread_t p_thread1, p_thread2, c_thread1, c_thread2;
   pthread_t t[4];
   int  p1_status, p2_status, c1_status, c2_status;
   char *p1 = "Producer 1";

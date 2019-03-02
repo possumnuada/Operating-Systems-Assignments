@@ -27,7 +27,7 @@ struct uthread_sem {
 
 uthread_sem_t uthread_sem_create (int initial_value) {
   uthread_sem_t sem = malloc (sizeof (struct uthread_sem));
-  
+
   sem->value = initial_value;
   spinlock_create   (&sem->spinlock);
   uthread_initqueue (&sem->waiter_queue);
@@ -48,7 +48,7 @@ void uthread_sem_destroy (uthread_sem_t sem) {
 
 void uthread_sem_signal (uthread_sem_t sem) {
   uthread_t waiter_thread;
-  
+
   spinlock_lock (&sem->spinlock);
   sem->value += 1;
   waiter_thread = uthread_dequeue (&sem->waiter_queue);
@@ -63,7 +63,7 @@ void uthread_sem_signal (uthread_sem_t sem) {
 
 void uthread_sem_wait (uthread_sem_t sem) {
   uthread_t waiter_thread;
-  
+
   spinlock_lock (&sem->spinlock);
   while (sem->value < 1) {
     uthread_enqueue (&sem->waiter_queue, uthread_self());
@@ -74,4 +74,3 @@ void uthread_sem_wait (uthread_sem_t sem) {
   sem->value -= 1;
   spinlock_unlock (&sem->spinlock);
 }
-
