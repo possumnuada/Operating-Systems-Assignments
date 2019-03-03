@@ -1,5 +1,4 @@
 /* Possum Nuada
- * V00853812
  *
  * Resources:
  * http://www.csc.villanova.edu/~mdamian/threads/posixsem.html
