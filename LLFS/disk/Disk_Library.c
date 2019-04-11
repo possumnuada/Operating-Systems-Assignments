@@ -5,19 +5,46 @@
 #define DISK_PATH "vdisk"
 
 void initLLFS(){
+    // Clear vdisk - set to all 0s
     char zeros[2097152];
     memset(zeros, 0, 2097152);  // Set array of all zeros
-    zeros[513] = 63;
-    char freeBlocks[512];       // Make block of all 1s except for first 10 bits
+    FILE * file = fopen(DISK_PATH, "w");
+    fwrite(zeros, 1, sizeof(zeros), file);
+
+    // Initialize superblock - block 0
+
+    // Initialize free block vector - block 1
+    char freeBlocks[512];       
     memset(freeBlocks, 255, 512);
     freeBlocks[0] = 0; //00000000
-    freeBlocks[1] = 63; //00111111
-    FILE * file = fopen(DISK_PATH, "w");
-    //size_t bytes = 
-    fwrite(zeros, 1, sizeof(zeros), file);
-    // printf("The number of bytes written was: %ld\n", bytes);
+    freeBlocks[1] = 15; //00001111 - first 10 blocks reserved, next 2 used for root
     fseek(file, 512, SEEK_SET);
     fwrite(freeBlocks, 1, 512, file);
+
+    // Initialize inode map - block 2
+    // 1st byte | 2nd and 3rd byte
+    // ---------|-------------------
+    // flags    | inode block
+    // flags (0/1)
+    // | 0 | 0 | 0 | 0 | 0 | 0 | file/directory | in use/free |
+    char inode0map[3];
+    inode0map[0] = 3;       // flags - 00000011
+    inode0map[1] = 0;       // 2 and 3 inode block
+    inode0map[2] = 10;      // block 10 first free block
+    fseek(file, 512*2, SEEK_SET);
+    fwrite(inode0map, 1, 3, file);
+
+    // Initialize root inode - block 10
+    char inode0[32];
+    // flag bit at 0th posiiton (0/1) (file/directory)
+    inode0[7] = 1;
+
+    // first data block is block 11
+    inode0[9] = 11; 
+
+    fseek(file, 512*10, SEEK_SET);
+    fwrite(inode0, 1, 32, file);
+
     fclose(file);
 }
 
