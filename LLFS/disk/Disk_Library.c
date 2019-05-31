@@ -26,7 +26,7 @@ void initLLFS(){
     // ---------|-------------------
     // flags    | inode block
     // flags (0/1)
-    // | 0 | 0 | 0 | 0 | 0 | 0 | file/directory | in use/free |
+    // | 0 | 0 | 0 | 0 | 0 | 0 | file/directory | free/in use |
     char inode0map[3];
     inode0map[0] = 3;       // flags - 00000011
     inode0map[1] = 0;       // 2 and 3 inode block
